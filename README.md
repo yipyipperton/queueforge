@@ -103,7 +103,7 @@ Common fields: `failureProbability` 0–1 (default 0.2), `durationMs` 0–2000 (
 ### Auth & abuse controls
 
 * **Admin** (`Authorization: Bearer $ADMIN_TOKEN`, constant-time compare): `POST /api/jobs`, `POST /api/worker/process`, `POST /api/jobs/:id/retry`. If `ADMIN_TOKEN` is unset these return `503 admin_not_configured` (fail closed).
-* **Public demo** routes used by the console, rate limited per IP with a fixed-window counter in the `rate_limits` table (works across serverless instances): seed ≤ 12 jobs/call, 10 calls/min; process limit 10 / 8s budget, 20 calls/min; DLQ retry 30/min.
+* **Public demo** routes used by the console, rate limited per client network (IPv4 /24, IPv6 /64 — so rotating proxy/privacy addresses share a bucket) with a fixed-window counter in the `rate_limits` table (works across serverless instances): seed ≤ 12 jobs/call, 10 calls/min; process limit 10 / 8s budget, 20 calls/min; DLQ retry 30/min.
 * Reads (`GET`) are public — this is a demo console. Put the app behind Vercel auth / SSO if job data is sensitive.
 
 ---
@@ -170,7 +170,7 @@ Scripts: `npm run typecheck` · `npm test` (Vitest) · `npm run build` · `npm r
 
 ### Tests
 
-`npm test` runs 26 tests. Pure units cover the state machine, backoff math (bounds, cap, overflow, jitter clamping), outcome decisions and Zod validation. The DB layer is tested against **PGlite** (real Postgres compiled to WASM) with the production migrations applied, covering: idempotent & concurrent duplicate submission, no duplicate execution, bounded claiming, not-yet-due jobs, full retry → backoff → DLQ lifecycle with exact delays, manual DLQ retry rules, the DB `CHECK` constraint, time-budget release, lease reaping, metrics and rate limiting. No network or Neon account needed.
+`npm test` runs 29 tests. Pure units cover the state machine, backoff math (bounds, cap, overflow, jitter clamping), outcome decisions and Zod validation. The DB layer is tested against **PGlite** (real Postgres compiled to WASM) with the production migrations applied, covering: idempotent & concurrent duplicate submission, no duplicate execution, bounded claiming, not-yet-due jobs, full retry → backoff → DLQ lifecycle with exact delays, manual DLQ retry rules, the DB `CHECK` constraint, time-budget release, lease reaping, metrics and rate limiting. No network or Neon account needed.
 
 ## Deployment (Vercel + Neon)
 

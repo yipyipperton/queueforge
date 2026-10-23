@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import { getExec } from "../db/client";
 import type { Exec } from "../db/repo";
 import { rateLimit } from "../db/repo";
+import { ipBucket } from "../core/ip";
 
 export const json = (data: unknown, status = 200, headers?: Record<string, string>) =>
   NextResponse.json(data, { status, headers: { "cache-control": "no-store", ...headers } });
@@ -31,8 +32,8 @@ export function requireAdmin(req: Request): Response | null {
 }
 
 export function clientIp(req: Request): string {
-  const xf = req.headers.get("x-forwarded-for");
-  return (xf?.split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown").slice(0, 64);
+  const h = req.headers;
+  return ipBucket(h.get("x-vercel-forwarded-for") || h.get("x-forwarded-for") || h.get("x-real-ip"));
 }
 
 export async function demoRateLimit(exec: Exec, req: Request, route: string, max: number, windowSec = 60): Promise<Response | null> {
